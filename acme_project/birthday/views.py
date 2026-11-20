@@ -1,14 +1,25 @@
 # birthday/views.py
 from django.shortcuts import render
 
-# Импортируем класс BirthdayForm, чтобы создать экземпляр формы
 from .forms import BirthdayForm
+from .utils import calculate_birthday_countdown
 
 
 def birthday(request):
-    # Создаём экземпляр класса формы
-    form = BirthdayForm()
-    # Добавляем его в словарь контекста под ключом form:
-    context = {'form': form}
-    # Указываем нужный шаблон и передаём в него словарь контекста
-    return render(request, 'birthday/birthday.html', context)
+    form = BirthdayForm(request.GET or None)
+    context = {"form": form}
+
+    if form.is_valid():
+        cleaned_data = form.cleaned_data
+        context.update(
+            {
+                "birthday_countdown": calculate_birthday_countdown(
+                    cleaned_data["birthday"],
+                ),
+                "first_name": cleaned_data["first_name"],
+                "last_name": cleaned_data["last_name"],
+                "show_result": True,
+            }
+        )
+
+    return render(request, "birthday/birthday.html", context)
