@@ -1,3 +1,7 @@
 Django==5.2.12
+<<<<<<< HEAD
 django_bootstrap5
+=======
+django-bootstrap5==26.2
+>>>>>>> dbdb54a5cb422d4ca86e64e7254e4fc0495b9436
 Pillow==12.3.0

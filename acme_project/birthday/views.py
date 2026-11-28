@@ -1,64 +1,41 @@
-# birthday/views.py# birthday/views.py
-from django.shortcuts import get_object_or_404, redirect, render
+# birthday/views.py
+from django.urls import reverse_lazy
+from django.views.generic import (CreateView, DeleteView, DetailView, ListView, UpdateView,)
 
 from .forms import BirthdayForm
 from .models import Birthday
 from .utils import calculate_birthday_countdown
 
 
-def birthday(request, pk=None):
-    if pk is not None:
-        instance = get_object_or_404(Birthday, pk=pk)
-    else:
-        instance = None
+class BirthdayListView(ListView):
+    model = Birthday
+    ordering = 'id'
+    paginate_by = 10
+    context_object_name = 'birthdays'
 
-    form_data = request.POST if request.method == 'POST' else None
-    form = BirthdayForm(form_data, instance=instance)
-    context = {'form': form}
+class BirthdayMixin:
+    model = Birthday
+    success_url = reverse_lazy('birthday:list')
 
-    if request.method == "POST":
-        form_data = request.POST
-        form_files = request.FILES
-    else:
-        form_data = None
-        form_files = None
 
-    form = BirthdayForm(
-        form_data,
-        form_files,
-        instance=instance,
-    )
-    
-    if form.is_valid():
-        saved_birthday = form.save()
-        context.update(
-            {
-                'birthday_countdown': calculate_birthday_countdown(
-                    saved_birthday.birthday,
-                ),
-                'first_name': saved_birthday.first_name,
-                'last_name': saved_birthday.last_name,
-                'record_id': saved_birthday.pk,
-                'show_result': True,
-            }
+class BirthdayCreateView(BirthdayMixin, CreateView):
+    form_class = BirthdayForm
+
+
+class BirthdayUpdateView(BirthdayMixin, UpdateView):
+    form_class = BirthdayForm
+
+
+class BirthdayDeleteView(BirthdayMixin, DeleteView):
+    pass
+
+
+class BirthdayDetailView(DetailView):
+    model = Birthday
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['birthday_countdown'] = calculate_birthday_countdown(
+            self.object.birthday
         )
-
-    return render(request, 'birthday/birthday.html', context)
-
-def delete_birthday(request, pk):
-    instance = get_object_or_404(Birthday, pk=pk)
-
-    if request.method == 'POST':
-        instance.delete()
-        return redirect('birthday:list')
-
-    form = BirthdayForm(instance=instance)
-    context = {'form': form}
-    return render(request, 'birthday/birthday.html', context)
-
-def birthday_list(request):
-    # Получаем все объекты модели Birthday из БД
-    birthdays = Birthday.objects.all()
-    # Передаём их в контекст шаблона
-    context = {'birthdays': birthdays}
-    return render(request, 'birthday/birthday_list.html', context) 
+        return context
